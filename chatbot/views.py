@@ -1,19 +1,33 @@
-from django.shortcuts import render
+import json
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-import json
-from chatbot.services.llm import generate_response
-
 
 @csrf_exempt
 def chat(request):
-    if request.method == "POST":
+    if request.method != "POST":
+        return JsonResponse(
+            {"error": "POST request required"},
+            status=400
+        )
+
+    try:
         data = json.loads(request.body)
-        user_message = data.get("message", "")
+        user_message = data.get("message")
 
-        reply = generate_response(user_message)
+        if not user_message:
+            return JsonResponse(
+                {"error": "Message is required"},
+                status=400
+            )
 
-        return JsonResponse({"reply": reply})
+        # TEMP response (AI comes next)
+        return JsonResponse({
+            "user": user_message,
+            "bot": f"You said: {user_message}"
+        })
 
-    return JsonResponse({"error": "POST request required"}, status=400)
-
+    except json.JSONDecodeError:
+        return JsonResponse(
+            {"error": "Invalid JSON"},
+            status=400
+        )
